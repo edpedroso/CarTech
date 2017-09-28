@@ -63,6 +63,7 @@
       setNewCarro: function setNewCarro(){
         var $tabelaCarros = new $('[data-js="tabelaCarros"]');
         var tableRow = document.createElement('tr');
+        var idExcluir;
         Array.prototype.forEach.call($dadosCarro.get(), function(item){
           var tableData = null;
           tableData = document.createElement('td');
@@ -77,7 +78,28 @@
           tableRow.appendChild(tableData);
           item.value = '';
         });
+        idExcluir = new Date().getTime();
+        tableRow.appendChild(app.insereBtnExcluir(idExcluir));
         $tabelaCarros.get(0).appendChild(tableRow);
+
+        app.acaoBtnExcluir(idExcluir);
+      },
+
+      acaoBtnExcluir: function acaoBtnExcluir(idExcluir){
+        var $btnExcluir = new $('[data-js="' + idExcluir + '"]');
+        $btnExcluir.on('click', function(){
+          this.parentNode.parentNode.remove();
+        }, false);
+      },
+
+      insereBtnExcluir: function insereBtnExcluir(idExcluir){
+        var tdExcluir = document.createElement('td');
+        var btnExcluir = document.createElement('button');
+        btnExcluir.setAttribute('data-js', idExcluir);
+        btnExcluir.setAttribute('class', 'btn btn-danger btn-block');
+        btnExcluir.appendChild(document.createTextNode('EXCLUIR'));
+        tdExcluir.appendChild(btnExcluir);
+        return tdExcluir;
       },
 
       checaDadosCarro: function checaDadosCarro(){
