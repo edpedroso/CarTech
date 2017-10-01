@@ -1,50 +1,62 @@
 (function($) {
   'use strict';
 
-  /*
-  Vamos estruturar um pequeno app utilizando módulos.
-  Nosso APP vai ser um cadastro de carros. Vamos fazê-lo por partes.
-  A primeira etapa vai ser o cadastro de veículos, de deverá funcionar da
-  seguinte forma:
-  - No início do arquivo, deverá ter as informações da sua empresa - nome e
-  telefone (já vamos ver como isso vai ser feito)
-  - Ao abrir a tela, ainda não teremos carros cadastrados. Então deverá ter
-  um formulário para cadastro do carro, com os seguintes campos:
-    - Imagem do carro (deverá aceitar uma URL)
-    - Marca / Modelo
-    - Ano
-    - Placa
-    - Cor
-    - e um botão "Cadastrar"
-
-  Logo abaixo do formulário, deverá ter uma tabela que irá mostrar todos os
-  carros cadastrados. Ao clicar no botão de cadastrar, o novo carro deverá
-  aparecer no final da tabela.
-
-  Agora você precisa dar um nome para o seu app. Imagine que ele seja uma
-  empresa que vende carros. Esse nosso app será só um catálogo, por enquanto.
-  Dê um nome para a empresa e um telefone fictício, preechendo essas informações
-  no arquivo company.json que já está criado.
-
-  Essas informações devem ser adicionadas no HTML via Ajax.
-
-  Parte técnica:
-  Separe o nosso módulo de DOM criado nas últimas aulas em
-  um arquivo DOM.js.
-
-  E aqui nesse arquivo, faça a lógica para cadastrar os carros, em um módulo
-  que será nomeado de "app".
-  */
-
   var app = (function application(){
     var $erro = new $('[data-js="erro"]');
     var $dadosCarro = new $('input');
+    var tableRow;
 
     return {
       init: function init(){
         this.dadosEmpresa();
+        this.carregaCarros();
         this.iniciaEventos();
       },
+
+      carregaCarros: function carregaCarros(){
+        var ajaxGet = new XMLHttpRequest();
+        ajaxGet.open('GET', 'http://localhost:3000/car');
+        ajaxGet.send();
+        ajaxGet.addEventListener('readystatechange', this.listaCarros);
+      },
+
+      listaCarros: function listaCarros(){
+        if(this.readyState === 4 && this.status === 200){
+          var arrCarros = JSON.parse(this.responseText);
+          var $tabelaCarros = new $('[data-js="tabelaCarros"]');
+          $tabelaCarros.get(0).innerText = '';
+
+          arrCarros.forEach(function(item){
+            tableRow = document.createElement('tr');
+            var tdImagem = document.createElement('td');
+            var imgImagem = document.createElement('img');
+            imgImagem.src = item.image;
+            imgImagem.width = 200;
+            tdImagem.appendChild(imgImagem);
+            tableRow.appendChild(tdImagem);
+
+            app.montaLinhaTabela(item.brandModel);
+            app.montaLinhaTabela(item.year);
+            app.montaLinhaTabela(item.plate);
+            app.montaLinhaTabela(item.color);
+
+            tableRow.appendChild(app.insereBtnExcluir(item.plate));
+
+            $tabelaCarros.get(0).appendChild(tableRow);
+
+            app.acaoBtnExcluir(item.plate);
+          });
+
+        }
+      },
+
+      montaLinhaTabela: function montaLinhaTabela(dadoCarro){
+        var td = document.createElement('td');
+        var content = document.createTextNode(dadoCarro);
+        td.appendChild(content);
+        tableRow.appendChild(td);
+      },
+
 
       iniciaEventos: function iniciaEventos(){
         $('[data-js="submit"]').get(0).addEventListener('click', this.handleBtnClick, false);
@@ -54,35 +66,30 @@
         event.preventDefault();
         app.escondeErro();
         if(app.checaDadosCarro()){
-          app.setNewCarro();
+          app.carroUrlEncoded();
+          app.cadastraCarro();
         }else{
           app.msgErro('Preencha todos os campos do Veículo!', 'danger');
         }
       },
 
-      setNewCarro: function setNewCarro(){
-        var $tabelaCarros = new $('[data-js="tabelaCarros"]');
-        var tableRow = document.createElement('tr');
-        var idExcluir;
+      carroUrlEncoded: function carroUrlEncoded(){
+        var carro = [];
         Array.prototype.forEach.call($dadosCarro.get(), function(item){
-          var tableData = null;
-          tableData = document.createElement('td');
-          if(item.getAttribute('type') !== 'url'){
-            tableData.appendChild(document.createTextNode(item.value));
-          }else{
-            var img = document.createElement('img');
-            img.src = item.value;
-            img.width = 200;
-            tableData.appendChild(img);
-          }
-          tableRow.appendChild(tableData);
+          carro.push(item.name + '=' + item.value);
+        });
+        return carro.join('&');
+      },
+
+      cadastraCarro: function cadastraCarro(){
+        var ajaxPost = new XMLHttpRequest();
+        ajaxPost.open('POST', 'http://localhost:3000/car');
+        ajaxPost.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        ajaxPost.send(app.carroUrlEncoded());
+        Array.prototype.forEach.call($dadosCarro.get(), function(item){
           item.value = '';
         });
-        idExcluir = new Date().getTime();
-        tableRow.appendChild(app.insereBtnExcluir(idExcluir));
-        $tabelaCarros.get(0).appendChild(tableRow);
-
-        app.acaoBtnExcluir(idExcluir);
+        this.carregaCarros();
       },
 
       acaoBtnExcluir: function acaoBtnExcluir(idExcluir){
@@ -148,7 +155,6 @@
         }
       }
     };
-
 
   })();
 
