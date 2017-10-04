@@ -66,7 +66,6 @@
         event.preventDefault();
         app.escondeErro();
         if(app.checaDadosCarro()){
-          app.carroUrlEncoded();
           app.cadastraCarro();
         }else{
           app.msgErro('Preencha todos os campos do Veículo!', 'danger');
@@ -95,7 +94,15 @@
       acaoBtnExcluir: function acaoBtnExcluir(idExcluir){
         var $btnExcluir = new $('[data-js="' + idExcluir + '"]');
         $btnExcluir.on('click', function(){
-          this.parentNode.parentNode.remove();
+          var ajaxDel = new XMLHttpRequest();
+          ajaxDel.open('DELETE', 'http://localhost:3000/car');
+          ajaxDel.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          ajaxDel.send('plate=' + idExcluir);
+          ajaxDel.onreadystatechange = function(){
+            if(ajaxDel.readyState === 4 && ajaxDel.status === 200){
+              app.carregaCarros();
+            }
+          };
         }, false);
       },
 
